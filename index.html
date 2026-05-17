@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Floor Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Fredoka One', 'Nunito';
+    background: #f0ede8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    color: #1a1a1a;
+  }
+
+  h1 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #f60000;
+    margin-bottom: 48px;
+  }
+
+  .map-container {
+    position: relative;
+    width: 700px;
+  }
+
+  .floor-label {
+    position: absolute;
+    right: -48px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: #000000;
+    font-weight: 500;
+    writing-mode: vertical-rl;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .floor-section {
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  svg.floor {
+    width: 100%;
+    overflow: visible;
+    display: block;
+    cursor: default;
+  }
+
+  .room-face {
+    transition: fill 0.15s ease;
+    cursor: pointer;
+  }
+
+  .room-face:hover {
+    filter: brightness(0.92);
+  }
+
+  .room-face.highlighted {
+    fill: #d4a8a0 !important;
+  }
+
+  .room-top.highlighted {
+    fill: #e8c4bc !important;
+  }
+
+  .room-side.highlighted {
+    fill: #c4908a !important;
+  }
+
+  /* Popup */
+  #popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #popup-overlay.active {
+    display: flex;
+  }
+
+  #popup {
+    background: #fff;
+    border-radius: 2px;
+    padding: 36px 40px;
+    max-width: 420px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+
+  #popup .room-id {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: #bbb;
+    margin-bottom: 8px;
+  }
+
+  #popup h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #1a1a1a;
+  }
+
+  #popup .floor-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  #popup .floor-tag.f1 { background: #e8f0e4; color: #4a7a3a; }
+  #popup .floor-tag.f2 { background: #e4eaf8; color: #3a5a9a; }
+
+  #popup .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  #popup .meta-item label {
+    font-size: 11px;
+    color: #000000;
+    letter-spacing: 0.12em;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  #popup .meta-item span {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  #popup p.desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #555;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 16px;
+  }
+
+  #popup-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #ccc;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+
+  #popup-close:hover { color: #888; }
+
+  .legend {
+    margin-top: 40px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #999;
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Floor Map</h1>
+
+<div class="map-container">
+
+  <!-- 2F -->
+  <div class="floor-section">
+    <svg class="floor" id="svg-2f" viewBox="0 0 680 220">
+      <defs>
+        <filter id="subtle-shadow" x="-5%" y="-5%" width="110%" height="120%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000018"/>
+        </filter>
+      </defs>
+      <!-- Isometric shelf unit: 4 rooms 2A 2B 2C 2D -->
+      <!-- Each room: front face, top face, right side face -->
+
+      <!-- Room 2A -->
+      <g class="room-group" data-room="201" data-floor="2">
+        <polygon class="room-face room-top" data-room="201" data-floor="2" points="40,40 190,40 210,20 60,20" fill="#d8d0c4"/>
+        <polygon class="room-face room-front" data-room="201" data-floor="2" points="40,40 190,40 190,170 40,170" fill="#e8e2d8"/>
+        <polygon class="room-face room-side" data-room="201" data-floor="2" points="190,40 210,20 210,150 190,170" fill="#ccc5b8"/>
+        <text x="115" y="112" text-anchor="middle" font-size="13" fill="#888" font-weight="500" letter-spacing="1" pointer-events="none">201</text>
+      </g>
+
+      <!-- Room 2B -->
+      <g class="room-group" data-room="202" data-floor="2">
+        <polygon class="room-face room-top" data-room="202" data-floor="2" points="190,40 340,40 360,20 210,20" fill="#d0c8bc"/>
+        <polygon class="room-face room-front" data-room="202" data-floor="2" points="190,40 340,40 340,170 190,170" fill="#e2dbd0"/>
+        <polygon class="room-face room-side" data-room="202" data-floor="2" points="340,40 360,20 360,150 340,170" fill="#c8c0b4"/>
+        <text x="265" y="112" text-anchor="middle" font-size="13" fill="#888" font-weight="500" letter-spacing="1" pointer-events="none">202</text>
+      </g>
+
+      <!-- Room 2C -->
+      <g class="room-group" data-room="203" data-floor="2">
+        <polygon class="room-face room-top" data-room="203" data-floor="2" points="340,40 490,40 510,20 360,20" fill="#d0c8bc"/>
+        <polygon class="room-face room-front" data-room="203" data-floor="2" points="340,40 490,40 490,170 340,170" fill="#e2dbd0"/>
+        <polygon class="room-face room-side" data-room="203" data-floor="2" points="490,40 510,20 510,150 490,170" fill="#c8c0b4"/>
+        <text x="415" y="112" text-anchor="middle" font-size="13" fill="#888" font-weight="500" letter-spacing="1" pointer-events="none">203</text>
+      </g>
+
+      <!-- Room 2D -->
+      <g class="room-group" data-room="204" data-floor="2">
+        <polygon class="room-face room-top" data-room="204" data-floor="2" points="490,40 640,40 660,20 510,20" fill="#d0c8bc"/>
+        <polygon class="room-face room-front" data-room="204" data-floor="2" points="490,40 640,40 640,170 490,170" fill="#e2dbd0"/>
+        <polygon class="room-face room-side" data-room="204" data-floor="2" points="640,40 660,20 660,150 640,170" fill="#c8c0b4"/>
+        <text x="565" y="112" text-anchor="middle" font-size="13" fill="#888" font-weight="500" letter-spacing="1" pointer-events="none">204</text>
+      </g>
+
+      <!-- Outline borders -->
+      <polygon points="40,170 640,170 660,150 660,20 510,20 490,40 340,40 190,40 40,40" fill="none" stroke="#bbb5aa" stroke-width="1"/>
+      <line x1="190" y1="40" x2="190" y2="170" stroke="#bbb5aa" stroke-width="0.8"/>
+      <line x1="340" y1="40" x2="340" y2="170" stroke="#bbb5aa" stroke-width="0.8"/>
+      <line x1="490" y1="40" x2="490" y2="170" stroke="#bbb5aa" stroke-width="0.8"/>
+      <line x1="210" y1="20" x2="210" y2="150" stroke="#bbb5aa" stroke-width="0.6"/>
+      <line x1="360" y1="20" x2="360" y2="150" stroke="#bbb5aa" stroke-width="0.6"/>
+      <line x1="510" y1="20" x2="510" y2="150" stroke="#bbb5aa" stroke-width="0.6"/>
+
+      <!-- Floor label -->
+      <text x="672" y="95" font-size="11" fill="#bbb" letter-spacing="2" font-weight="500">2F</text>
+    </svg>
+  </div>
+
+  <!-- Spacer -->
+  <div style="height: 12px;"></div>
+
+  <!-- 1F -->
+  <div class="floor-section">
+    <svg class="floor" id="svg-1f" viewBox="0 0 680 220">
+      <!-- Room 1A -->
+      <g class="room-group" data-room="101" data-floor="1">
+        <polygon class="room-face room-top" data-room="101" data-floor="1" points="40,40 190,40 210,20 60,20" fill="#c8d4c0"/>
+        <polygon class="room-face room-front" data-room="101" data-floor="1" points="40,40 190,40 190,170 40,170" fill="#d8e4d0"/>
+        <polygon class="room-face room-side" data-room="101" data-floor="1" points="190,40 210,20 210,150 190,170" fill="#b8c8b0"/>
+        <text x="115" y="112" text-anchor="middle" font-size="13" fill="#7a967a" font-weight="500" letter-spacing="1" pointer-events="none">101</text>
+      </g>
+
+      <!-- Room 1B -->
+      <g class="room-group" data-room="102" data-floor="1">
+        <polygon class="room-face room-top" data-room="102" data-floor="1" points="190,40 340,40 360,20 210,20" fill="#c0ccb8"/>
+        <polygon class="room-face room-front" data-room="102" data-floor="1" points="190,40 340,40 340,170 190,170" fill="#d2deca"/>
+        <polygon class="room-face room-side" data-room="102" data-floor="1" points="340,40 360,20 360,150 340,170" fill="#b0c0a8"/>
+        <text x="265" y="112" text-anchor="middle" font-size="13" fill="#7a967a" font-weight="500" letter-spacing="1" pointer-events="none">102</text>
+      </g>
+
+      <!-- Room 1C -->
+      <g class="room-group" data-room="103" data-floor="1">
+        <polygon class="room-face room-top" data-room="103" data-floor="1" points="340,40 490,40 510,20 360,20" fill="#c0ccb8"/>
+        <polygon class="room-face room-front" data-room="103" data-floor="1" points="340,40 490,40 490,170 340,170" fill="#d2deca"/>
+        <polygon class="room-face room-side" data-room="103" data-floor="1" points="490,40 510,20 510,150 490,170" fill="#b0c0a8"/>
+        <text x="415" y="112" text-anchor="middle" font-size="13" fill="#7a967a" font-weight="500" letter-spacing="1" pointer-events="none">103</text>
+      </g>
+
+      <!-- Room 1D -->
+      <g class="room-group" data-room="104" data-floor="1">
+        <polygon class="room-face room-top" data-room="104" data-floor="1" points="490,40 640,40 660,20 510,20" fill="#c0ccb8"/>
+        <polygon class="room-face room-front" data-room="104" data-floor="1" points="490,40 640,40 640,170 490,170" fill="#d2deca"/>
+        <polygon class="room-face room-side" data-room="104" data-floor="1" points="640,40 660,20 660,150 640,170" fill="#b0c0a8"/>
+        <text x="565" y="112" text-anchor="middle" font-size="13" fill="#7a967a" font-weight="500" letter-spacing="1" pointer-events="none">104</text>
+      </g>
+
+      <!-- Outline borders -->
+      <polygon points="40,170 640,170 660,150 660,20 510,20 490,40 340,40 190,40 40,40" fill="none" stroke="#a8bca0" stroke-width="1"/>
+      <line x1="190" y1="40" x2="190" y2="170" stroke="#a8bca0" stroke-width="0.8"/>
+      <line x1="340" y1="40" x2="340" y2="170" stroke="#a8bca0" stroke-width="0.8"/>
+      <line x1="490" y1="40" x2="490" y2="170" stroke="#a8bca0" stroke-width="0.8"/>
+      <line x1="210" y1="20" x2="210" y2="150" stroke="#a8bca0" stroke-width="0.6"/>
+      <line x1="360" y1="20" x2="360" y2="150" stroke="#a8bca0" stroke-width="0.6"/>
+      <line x1="510" y1="20" x2="510" y2="150" stroke="#a8bca0" stroke-width="0.6"/>
+
+      <text x="672" y="95" font-size="11" fill="#bbb" letter-spacing="2" font-weight="500">1F</text>
+    </svg>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background:#c8d4c0; border: 1px solid #a8bca0;"></div>
+    <span>1F（1階）</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:#d8d0c4; border: 1px solid #bbb5aa;"></div>
+    <span>2F（2階）</span>
+  </div>
+  <div class="legend-item" style="color: #bbb;">
+    <span>部屋をクリックして詳細を表示</span>
+  </div>
+</div>
+
+<!-- Popup -->
+<div id="popup-overlay">
+  <div id="popup">
+    <button id="popup-close" aria-label="閉じる">×</button>
+    <div class="room-id" id="popup-room-id">203</div>
+    <h2 id="popup-name">booth 7</h2>
+    <span class="floor-tag f2" id="popup-floor-tag">2F</span>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <label>学年</label>
+        <span id="popup-grade">—</span>
+      </div>
+      <div class="meta-item">
+        <label>リーダー</label>
+        <span id="popup-leader">—</span>
+      </div>
+      <div class="meta-item">
+        <label>ジャンル</label>
+        <span id="popup-genre">—</span>
+      </div>
+      <div class="meta-item">
+        <label>所要時間</label>
+        <span id="popup-time">—</span>
+      </div>
+    </div>
+    <p class="desc" id="popup-desc">—</p>
+  </div>
+</div>
+
+<script>
+const roomData = {
+  "101": {
+    name: "Booth 1",
+    floor: "1F",
+    grade: "ex) 9A",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "紹介や説明などがここに入ります。"
+  },
+  "102": {
+    name: "Booth 2",
+    floor: "1F",
+    grade: "10A",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  },
+  "103": {
+    name: "Booth 3",
+    floor: "1F",
+    grade: "11A",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  },
+  "104": {
+    name: "Booth 4",
+    floor: "1F",
+    grade: "12A",
+    leader: "—",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  },
+  "201": {
+    name: "Booth 5",
+    floor: "2F",
+    grade: "9B",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  },
+  "202": {
+    name: "Booth 6",
+    floor: "2F",
+    grade: "10B",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  },
+  "203": {
+    name: "Booth 7",
+    floor: "2F",
+    grade: "11B",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  },
+  "204": {
+    name: "Booth 8",
+    floor: "2F",
+    grade: "12B",
+    leader: "-",
+    genre: "-",
+    time: "- min",
+    desc: "----"
+  }
+};
+
+let currentHighlight = null;
+
+function clearHighlight() {
+  document.querySelectorAll('.room-face').forEach(el => {
+    el.classList.remove('highlighted');
+  });
+}
+
+function highlightRoom(roomId) {
+  clearHighlight();
+  document.querySelectorAll(`.room-face[data-room="${roomId}"]`).forEach(el => {
+    el.classList.add('highlighted');
+  });
+}
+
+function showPopup(roomId) {
+  const data = roomData[roomId];
+  if (!data) return;
+
+  document.getElementById('popup-room-id').textContent = roomId;
+  document.getElementById('popup-name').textContent = data.name;
+  document.getElementById('popup-grade').textContent = data.grade;
+  document.getElementById('popup-leader').textContent = data.leader;
+  document.getElementById('popup-genre').textContent = data.genre;
+  document.getElementById('popup-time').textContent = data.time;
+  document.getElementById('popup-desc').textContent = data.desc;
+
+  const floorTag = document.getElementById('popup-floor-tag');
+  floorTag.textContent = data.floor;
+  floorTag.className = 'floor-tag ' + (data.floor === '1F' ? 'f1' : 'f2');
+
+  document.getElementById('popup-overlay').classList.add('active');
+}
+
+document.querySelectorAll('.room-face').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    const roomId = el.getAttribute('data-room');
+    highlightRoom(roomId);
+  });
+
+  el.addEventListener('mouseleave', () => {
+    clearHighlight();
+  });
+
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const roomId = el.getAttribute('data-room');
+    showPopup(roomId);
+  });
+});
+
+document.getElementById('popup-close').addEventListener('click', () => {
+  document.getElementById('popup-overlay').classList.remove('active');
+});
+
+document.getElementById('popup-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('popup-overlay')) {
+    document.getElementById('popup-overlay').classList.remove('active');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('popup-overlay').classList.remove('active');
+  }
+});
+</script>
+</body>
+</html>
